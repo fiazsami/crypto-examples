@@ -1,50 +1,39 @@
-const BIP39 = require("bip39");
-const hdkey = require("ethereumjs-wallet/hdkey");
-const Wallet = require("ethereumjs-wallet");
+const net = require("net");
+const Web3 = require("web3");
+const web3 = new Web3(
+    new Web3.providers.IpcProvider(
+        "/Users/fiaz/Library/Ethereum/ropsten/geth.ipc",
+        net
+    )
+);
 
-const keccak256 = require("keccak256");
+// =========================================================
 
-function generateSeed(mnemonic) {
-    return BIP39.mnemonicToSeed(mnemonic);
-}
+console.log("ADDRESS 1");
+let account1 = web3.eth.accounts.create();
+console.log(account1);
 
-// m / purpose' / coin_type' / account' / change / address_index
+console.log("--------------------------------");
 
-function getDerivationPath(account, index) {
-    return `m/44'/60'/${account}'/0'/${index}`;
-}
+console.log("ADDRESS 2");
+let account2 = web3.eth.accounts.create();
+console.log(account2);
 
-function generatePrivateKey(mnemonic, dPath) {
-    const seed = generateSeed(mnemonic);
-    return hdkey
-        .fromMasterSeed(seed)
-        .derivePath(dPath)
-        .getWallet()
-        .getPrivateKey();
-}
+console.log("--------------------------------");
 
-function derivePublicKey(privateKey) {
-    const wallet = Wallet.fromPrivateKey(privateKey);
-    return wallet.getPublicKey();
-}
+console.log("ADDRESS 3");
+let account3 = web3.eth.accounts.privateKeyToAccount(account1.privateKey);
+console.log(account3);
 
-function deriveEthAddress(publicKey) {
-    const pkh = keccak256(publicKey).toString("hex");
-    const pkh40 = pkh.substring(pkh.length - 40, pkh.length);
-    return `0x${pkh40}`;
-}
+console.log("--------------------------------");
 
-const MNEMONIC = BIP39.generateMnemonic();
-for (let i = 0; i < 50; i++) {
-    const dPath = getDerivationPath(0, i);
-    const privateKey = generatePrivateKey(MNEMONIC, dPath);
-    const publicKey = derivePublicKey(privateKey);
-    const address = deriveEthAddress(publicKey);
-    // console.log(dPath);
-    // console.log(privateKey.toString("hex"));
-    // console.log(publicKey.toString("hex"));
-    console.log(address);
-    // console.log();
-}
+let signedMsg = web3.eth.accounts.sign("hello world!", account1.privateKey);
 
-console.log(MNEMONIC);
+let address1 = account1.address;
+console.log(signedMsg);
+console.log(address1);
+console.log(web3.eth.accounts.recover(signedMsg));
+
+// =========================================================
+
+console.log("DONE");
