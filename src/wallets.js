@@ -1,6 +1,7 @@
 const BIP39 = require("bip39");
 const hdkey = require("ethereumjs-wallet/hdkey");
 const Wallet = require("ethereumjs-wallet");
+const EthereumTx = require("ethereumjs-tx");
 
 const keccak256 = require("keccak256");
 
@@ -34,24 +35,29 @@ function deriveEthAddress(publicKey) {
     return `0x${pkh40}`;
 }
 
-function generateWallet(count = 1) {
-    let wallet = {
-        mnemonic: BIP39.generateMnemonic(),
-        paths: [],
-    };
-    for (let i = 0; i < count; i++) {
-        const path = getDerivationPath(0, i);
-        const privateKey = generatePrivateKey(wallet.mnemonic, path);
-        const publicKey = derivePublicKey(privateKey);
-        const address = deriveEthAddress(publicKey);
-        wallet.paths.push({
-            path: path,
-            private: privateKey.toString("hex"),
-            public: publicKey.toString("hex"),
-            address: address,
-        });
+class MyWallet {
+    constructor(mnemonic, count = 1) {
+        this.mnemonic = mnemonic;
+        this.paths = [];
+        for (let i = 0; i < count; i++) {
+            const path = getDerivationPath(0, i);
+            const privateKey = generatePrivateKey(this.mnemonic, path);
+            const publicKey = derivePublicKey(privateKey);
+            const address = deriveEthAddress(publicKey);
+            this.paths.push({
+                path: path,
+                private: privateKey,
+                public: publicKey,
+                address: address,
+            });
+        }
     }
-    return wallet;
+
+    signTx(txData, path = 0) {
+        const tx = new EthereumTx(txData);
+        tx.sign(this.paths[path].private);
+        return tx;
+    }
 }
 
-console.log(generateWallet());
+module.exports = MyWallet;
